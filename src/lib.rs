@@ -13,8 +13,12 @@
 //!
 //! let mut writer = Writer::new("MyTag", LogPriority::INFO);
 //! let _ = write!(writer, "Hellow World!");
-//! drop(writer) //or writer.flush();
+//! drop(writer); //or writer.flush();
+//!
+//! androidy_log::println!("Hello via macro!");
+//! androidy_log::eprintln!("Error via macro!");
 //! ```
+//!
 
 #![cfg_attr(not(test), no_std)]
 #![warn(missing_docs)]
@@ -209,6 +213,34 @@ impl Drop for Writer {
     fn drop(&mut self) {
         self.flush();
     }
+}
+
+#[macro_export]
+///`println` alternative to write message with INFO priority.
+macro_rules! println {
+    () => {{
+        $crate::println!(" ");
+    }};
+    ($($arg:tt)*) => {{
+        use core::fmt::Write;
+        let mut writer = $crate::Writer::new_default($crate::LogPriority::INFO);
+        let _ = write!(writer, $($arg)*);
+        drop(writer);
+    }}
+}
+
+#[macro_export]
+///`eprintln` alternative to write message with ERROR priority.
+macro_rules! eprintln {
+    () => {{
+        $crate::println!(" ");
+    }};
+    ($($arg:tt)*) => {{
+        use core::fmt::Write;
+        let mut writer = $crate::Writer::new_default($crate::LogPriority::ERROR);
+        let _ = write!(writer, $($arg)*);
+        drop(writer);
+    }}
 }
 
 #[cfg(test)]

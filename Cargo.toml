@@ -1,6 +1,6 @@
 [package]
 name = "androidy-log"
-version = "1.0.0"
+version = "1.0.1"
 authors = ["Douman <douman@gmx.se>"]
 keywords = ["log", "android"]
 description = "Minimal wrapper over android logging"

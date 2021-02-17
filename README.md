@@ -19,5 +19,8 @@ use core::fmt::Write;
 
 let mut writer = Writer::new("MyTag", LogPriority::INFO);
 let _ = write!(writer, "Hellow World!");
-drop(writer) //or writer.flush();
+drop(writer); //or writer.flush();
+
+androidy_log::println!("Hello via macro!");
+androidy_log::eprintln!("Error via macro!");
 ```
