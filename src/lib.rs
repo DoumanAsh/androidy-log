@@ -94,8 +94,16 @@ impl Writer {
     ///Creates new instance using default tag `Rust`
     ///
     ///- `prio` - Logging priority.
-    pub fn new_default(prio: LogPriority) -> Self {
-        Self::new(DEFAULT_TAG, prio)
+    pub const fn new_default(prio: LogPriority) -> Self {
+        let mut tag = [0u8; TAG_MAX_LEN + 1];
+
+        tag[0] = DEFAULT_TAG.as_bytes()[0];
+        tag[1] = DEFAULT_TAG.as_bytes()[1];
+        tag[2] = DEFAULT_TAG.as_bytes()[2];
+        tag[3] = DEFAULT_TAG.as_bytes()[3];
+        unsafe {
+            Self::from_raw_parts(mem::MaybeUninit::new(tag), prio)
+        }
     }
 
     #[inline]
@@ -176,7 +184,7 @@ impl Writer {
         loop {
             data = self.copy_data(data);
 
-            if data.len() == 0 {
+            if data.is_empty() {
                 break;
             } else {
                 self.flush();
@@ -245,7 +253,7 @@ macro_rules! eprintln {
 
 #[cfg(test)]
 mod tests {
-    use super::{LogPriority, Writer, TAG_MAX_LEN};
+    use super::{LogPriority, Writer, TAG_MAX_LEN, DEFAULT_TAG};
     const TAG: &str = "Test";
     const TAG_OVERFLOW: &str = "123456789123456789123456789";
 
@@ -259,10 +267,13 @@ mod tests {
 
     #[test]
     fn should_normal_write() {
-        let mut writer = Writer::new(TAG, LogPriority::WARN);
-        let data = TAG_OVERFLOW.as_bytes();
+        let mut writer = Writer::new_default(LogPriority::WARN);
+
+        let tag = unsafe { core::slice::from_raw_parts(writer.tag.as_ptr() as *const u8, DEFAULT_TAG.len()) };
+        assert_eq!(tag, DEFAULT_TAG.as_bytes());
         assert_eq!(writer.prio, LogPriority::WARN);
-        assert_eq!(unsafe { core::slice::from_raw_parts(writer.tag.as_ptr() as *const u8, TAG.len() + 1) }, &b"Test\0"[..]);
+
+        let data = TAG_OVERFLOW.as_bytes();
 
         writer.write_data(data);
         assert_eq!(writer.len, data.len());
@@ -279,6 +290,7 @@ mod tests {
     fn should_handle_write_overflow() {
         let mut writer = Writer::new(TAG, LogPriority::WARN);
         let data = TAG_OVERFLOW.as_bytes();
+        assert_eq!(unsafe { core::slice::from_raw_parts(writer.tag.as_ptr() as *const u8, TAG.len() + 1) }, &b"Test\0"[..]);
 
         //BUFFER_CAPACITY / TAG_OVERFLOW.len() = 148.xxx
         for idx in 1..=148 {
