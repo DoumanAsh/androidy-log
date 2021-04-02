@@ -112,10 +112,9 @@ impl Writer {
     ///- `tag` - Log message tag, truncated to first 23 characters.
     ///- `prio` - Logging priority
     pub fn new(tag: &str, prio: LogPriority) -> Self {
-        let mut tag_buffer = mem::MaybeUninit::<[u8; TAG_MAX_LEN + 1]>::uninit();
+        let mut tag_buffer = mem::MaybeUninit::<[u8; TAG_MAX_LEN + 1]>::zeroed();
         unsafe {
             ptr::copy_nonoverlapping(tag.as_ptr(), tag_buffer.as_mut_ptr() as *mut u8, cmp::min(tag.len(), TAG_MAX_LEN));
-            (tag_buffer.as_mut_ptr() as *mut u8).add(TAG_MAX_LEN).write(0);
             Self::from_raw_parts(tag_buffer, prio)
         }
     }
